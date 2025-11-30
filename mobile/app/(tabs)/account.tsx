@@ -1,15 +1,94 @@
-import React from "react";
-import { View, Text, Pressable, ScrollView, Alert } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  Alert,
+  FlatList,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  getAnalysisHistory,
+  deleteAnalysis,
+} from "@/api/services/analysis.service";
+import { handleApiError } from "@/api/client";
+import type { SavedAnalysis } from "@/types/api.types";
 import ScreenHeader from "../../components/common/ScreenHeader";
+import HistoryItem from "../../components/account/HistoryItem";
 
 export default function AccountScreen() {
   const router = useRouter();
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
   const isLoggedIn = !!user;
+
+  const [history, setHistory] = useState<SavedAnalysis[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+
+  // Load history when user logs in
+  useEffect(() => {
+    if (isLoggedIn) {
+      // Small delay to ensure token is ready after login/register
+      const timer = setTimeout(() => {
+        loadHistory();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    } else {
+      // Clear history when logged out
+      setHistory([]);
+    }
+  }, [isLoggedIn]);
+
+  const loadHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const data = await getAnalysisHistory(50);
+      setHistory(data.analyses);
+    } catch (error: any) {
+      const errorMsg = handleApiError(error);
+      Alert.alert("Lỗi", errorMsg);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadHistory();
+    setRefreshing(false);
+  };
+
+  const handleDeleteHistory = (id: string) => {
+    Alert.alert(
+      "Xóa phân tích",
+      "Bạn có chắc muốn xóa kết quả phân tích này?",
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Xóa",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteAnalysis(id);
+              setHistory((prev) => prev.filter((item) => item.id !== id));
+              Alert.alert("Thành công", "Đã xóa phân tích");
+            } catch (error: any) {
+              const errorMsg = handleApiError(error);
+              Alert.alert("Lỗi", errorMsg);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const menuItems = [
     {
@@ -17,12 +96,6 @@ export default function AccountScreen() {
       title: "Thông tin cá nhân",
       subtitle: "Cập nhật thông tin của bạn",
       onPress: () => console.log("Profile"),
-    },
-    {
-      icon: "time-outline" as const,
-      title: "Lịch sử phân tích",
-      subtitle: "Xem các kết quả đã lưu",
-      onPress: () => console.log("History"),
     },
     {
       icon: "notifications-outline" as const,
@@ -148,6 +221,9 @@ export default function AccountScreen() {
         className="flex-1"
         contentContainerClassName="p-5"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
       >
         {/* Profile Header */}
         <View className="bg-white rounded-3xl p-6 mb-5 shadow-sm">
@@ -165,6 +241,73 @@ export default function AccountScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
           </View>
+        </View>
+
+        {/* Analysis History Section */}
+        <View className="mb-5">
+          <View className="flex-row items-center justify-between mb-3 px-1">
+            <Text className="text-lg font-bold text-slate-900">
+              Lịch sử phân tích
+            </Text>
+            <Text className="text-sm text-slate-500">
+              {history.length} kết quả
+            </Text>
+          </View>
+
+          {loadingHistory && !refreshing ? (
+            <View className="bg-white rounded-2xl p-8 items-center">
+              <ActivityIndicator size="large" color="#0a7ea4" />
+              <Text className="text-sm text-slate-500 mt-3">
+                Đang tải lịch sử...
+              </Text>
+            </View>
+          ) : history.length === 0 ? (
+            <View className="bg-white rounded-2xl p-8 items-center">
+              <Ionicons
+                name="document-text-outline"
+                size={48}
+                color="#cbd5e1"
+              />
+              <Text className="text-base font-semibold text-slate-900 mt-3 mb-2">
+                Chưa có lịch sử
+              </Text>
+              <Text className="text-sm text-slate-500 text-center">
+                Bắt đầu phân tích da để lưu kết quả vào đây
+              </Text>
+            </View>
+          ) : (
+            <View>
+              {history
+                .slice(0, showAllHistory ? history.length : 3)
+                .map((item) => (
+                  <HistoryItem
+                    key={item.id}
+                    item={item}
+                    onDelete={handleDeleteHistory}
+                  />
+                ))}
+              {history.length > 3 && !showAllHistory && (
+                <Pressable
+                  className="bg-slate-100 rounded-xl py-3 mx-4 mt-2 active:bg-slate-200"
+                  onPress={() => setShowAllHistory(true)}
+                >
+                  <Text className="text-center text-sm font-semibold text-[#0a7ea4]">
+                    Xem thêm {history.length - 3} kết quả
+                  </Text>
+                </Pressable>
+              )}
+              {showAllHistory && history.length > 3 && (
+                <Pressable
+                  className="bg-slate-100 rounded-xl py-3 mx-4 mt-2 active:bg-slate-200"
+                  onPress={() => setShowAllHistory(false)}
+                >
+                  <Text className="text-center text-sm font-semibold text-[#0a7ea4]">
+                    Thu gọn
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
         </View>
 
         {/* Menu Items */}
@@ -205,6 +348,7 @@ export default function AccountScreen() {
                 onPress: async () => {
                   try {
                     await logout();
+                    setHistory([]); // Clear history on logout
                   } catch (error: any) {
                     Alert.alert("Lỗi", error.message);
                   }

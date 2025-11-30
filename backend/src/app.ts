@@ -25,12 +25,11 @@ import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
 
-// Config
 import { config, validateConfig } from './config/env.config';
 import { corsOptions } from './config/cors.config';
 import { logger } from './config/logger.config';
+import './config/firebase.config';
 
-// Middlewares
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware';
 import {
   attachRequestMetadata,

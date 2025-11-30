@@ -22,6 +22,7 @@ export default function AnalysisScreen() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     null
   );
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -94,6 +95,7 @@ export default function AnalysisScreen() {
       // ===== STEP 2: CONVERT TO BASE64 =====
       console.log("🔄 [Step 2] Converting to base64...");
       const base64Image = await convertImageToBase64(selectedImage);
+      setImageBase64(base64Image); // Store for saving later
       console.log("✅ [Step 2] Converted! Length:", base64Image.length);
 
       // ===== STEP 3: CALL API =====
@@ -127,6 +129,7 @@ export default function AnalysisScreen() {
   const handleAnalyzeAgain = () => {
     setAnalysisResult(null);
     setSelectedImage(null);
+    setImageBase64(null);
   };
 
   return (
@@ -144,6 +147,7 @@ export default function AnalysisScreen() {
             result={analysisResult}
             isLoading={isAnalyzing}
             onAnalyzeAgain={handleAnalyzeAgain}
+            imageBase64={imageBase64 || undefined}
           />
         ) : (
           <>

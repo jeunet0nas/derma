@@ -5,11 +5,10 @@ import {
   AnalyzeSkinResponse,
   AnalysisResult,
   HealthCheckResponse,
+  SaveAnalysisResponse,
+  AnalysisHistoryResponse,
 } from "@/types/api.types";
 
-/**
- * Health Check - Test kết nối backend
- */
 export const checkHealth = async (): Promise<HealthCheckResponse> => {
   const response =
     await apiClient.get<ApiResponse<HealthCheckResponse>>("/health");
@@ -37,13 +36,11 @@ export const analyzeSkin = async (
   imageBase64: string,
   includeExpertInfo: boolean = false
 ): Promise<AnalysisResult> => {
-  // Tạo request payload
   const payload: AnalyzeSkinRequest = {
     image: imageBase64,
     includeExpertInfo,
   };
 
-  // POST đến /api/v1/analysis/skin
   const response = await apiClient.post<ApiResponse<AnalyzeSkinResponse>>(
     "/api/v1/analysis/skin",
     payload
@@ -55,12 +52,81 @@ export const analyzeSkin = async (
 
 /**
  * Generate Heatmap - Tạo SVG overlay heatmap
- * (Có thể implement sau nếu cần)
+ *
+ * @deprecated Not implemented yet - reserved for future feature
+ * @param imageBase64 - Base64 string của ảnh
+ * @param analysisResult - Kết quả phân tích để tạo heatmap
+ * @returns SVG string hoặc URL của heatmap overlay
+ *
+ * Future implementation notes:
+ * - Có thể dùng backend endpoint /api/v1/analysis/heatmap
+ * - Hoặc generate client-side với react-native-svg
+ * - Hiển thị intensity map cho từng vùng da (T-zone, U-zone, etc)
  */
 export const generateHeatmap = async (
   imageBase64: string,
   analysisResult: AnalysisResult
 ): Promise<string> => {
-  // TODO: Implement nếu cần heatmap visualization
-  throw new Error("Not implemented yet");
+  throw new Error(
+    "Heatmap visualization feature is not implemented yet. Coming soon!"
+  );
+};
+
+/**
+ * Save Analysis - Lưu kết quả phân tích vào lịch sử
+ * Requires authentication (Firebase token)
+ *
+ * @param analysisResult - Kết quả phân tích cần lưu
+ * @param imageBase64 - Optional: Base64 image để lưu thumbnail
+ * @returns SaveAnalysisResponse với id và savedAt timestamp
+ */
+export const saveAnalysis = async (
+  analysisResult: AnalysisResult,
+  imageBase64?: string
+): Promise<SaveAnalysisResponse> => {
+  const payload = {
+    result: analysisResult,
+    image: imageBase64,
+  };
+
+  const response = await apiClient.post<ApiResponse<SaveAnalysisResponse>>(
+    "/api/v1/analysis/save",
+    payload
+  );
+
+  return response.data.data;
+};
+
+/**
+ * Get Analysis History - Lấy danh sách lịch sử phân tích
+ * Requires authentication (Firebase token)
+ *
+ * @param limit - Số lượng kết quả tối đa (default: 50)
+ * @returns AnalysisHistoryResponse với danh sách analyses
+ */
+export const getAnalysisHistory = async (
+  limit: number = 50
+): Promise<AnalysisHistoryResponse> => {
+  const response = await apiClient.get<ApiResponse<AnalysisHistoryResponse>>(
+    `/api/v1/analysis/history?limit=${limit}`
+  );
+
+  return response.data.data;
+};
+
+/**
+ * Delete Analysis - Xóa một phân tích khỏi lịch sử
+ * Requires authentication (Firebase token)
+ *
+ * @param analysisId - ID của phân tích cần xóa
+ * @returns Success message
+ */
+export const deleteAnalysis = async (
+  analysisId: string
+): Promise<{ message: string }> => {
+  const response = await apiClient.delete<ApiResponse<{ message: string }>>(
+    `/api/v1/analysis/history/${analysisId}`
+  );
+
+  return response.data.data;
 };

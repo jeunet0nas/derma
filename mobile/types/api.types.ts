@@ -77,3 +77,23 @@ export interface HealthCheckResponse {
   version: string;
   service: string;
 }
+
+export interface SavedAnalysis {
+  id: string;
+  userId: string;
+  result: AnalysisResult;
+  imageUrl?: string;
+  savedAt: string;
+  createdAt: string;
+}
+
+export interface AnalysisHistoryResponse {
+  analyses: SavedAnalysis[];
+  total: number;
+}
+
+export interface SaveAnalysisResponse {
+  id: string;
+  savedAt: string;
+  message?: string;
+}

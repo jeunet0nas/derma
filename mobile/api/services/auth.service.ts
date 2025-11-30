@@ -11,16 +11,12 @@ import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/config/firebase.config";
 import type { UserProfile } from "@/types/firebase.types";
 
-/**
- * Register new user with email and password
- */
 export const registerUser = async (
   email: string,
   password: string,
   displayName: string
 ): Promise<User> => {
   try {
-    // Create Firebase Auth user
     const userCredential: UserCredential = await createUserWithEmailAndPassword(
       auth,
       email,
@@ -28,10 +24,8 @@ export const registerUser = async (
     );
     const user = userCredential.user;
 
-    // Update display name
     await updateProfile(user, { displayName });
 
-    // Create user profile in Firestore
     const userProfile: UserProfile = {
       uid: user.uid,
       email: user.email!,
@@ -50,9 +44,6 @@ export const registerUser = async (
   }
 };
 
-/**
- * Login user with email and password
- */
 export const loginUser = async (
   email: string,
   password: string
@@ -70,9 +61,6 @@ export const loginUser = async (
   }
 };
 
-/**
- * Logout current user
- */
 export const logoutUser = async (): Promise<void> => {
   try {
     await signOut(auth);
@@ -82,9 +70,6 @@ export const logoutUser = async (): Promise<void> => {
   }
 };
 
-/**
- * Send password reset email
- */
 export const resetPassword = async (email: string): Promise<void> => {
   try {
     await sendPasswordResetEmail(auth, email);
