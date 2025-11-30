@@ -24,9 +24,24 @@ export const zoneAnalysisSchema = {
       description: 'Giải thích ngắn gọn về tình trạng của vùng da này.',
     },
     visualEvidence: {
-      type: Type.STRING,
-      description:
-        'Mô tả bằng chứng hình ảnh cụ thể mà AI nhìn thấy để đưa ra kết luận cho vùng này (ví dụ: "quan sát thấy các nốt mụn đỏ, sưng viêm, có nhân trắng").',
+      type: Type.OBJECT,
+      description: 'Chi tiết bằng chứng hình ảnh mà AI quan sát được.',
+      properties: {
+        visualClues: {
+          type: Type.STRING,
+          description:
+            'Mô tả bằng chứng hình ảnh cụ thể (ví dụ: "quan sát thấy các nốt mụn đỏ, sưng viêm, có nhân trắng").',
+        },
+        reasoning: {
+          type: Type.STRING,
+          description: 'Lý do tại sao AI đưa ra kết luận này dựa trên bằng chứng hình ảnh.',
+        },
+        certainty: {
+          type: Type.NUMBER,
+          description: 'Độ chắc chắn về phân tích vùng này, từ 0.0 đến 1.0 (0% đến 100%).',
+        },
+      },
+      required: ['visualClues', 'reasoning', 'certainty'],
     },
   },
   required: ['zone', 'condition', 'riskLevel', 'explanation', 'visualEvidence'],

@@ -6,31 +6,47 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useAuth } from "@/contexts/AuthContext";
 import AuthForm from "../../components/auth/AuthForm";
 import SocialLogin from "../../components/auth/SocialLogin";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    console.log("Login:", { email, password });
-    // TODO: Implement Firebase authentication
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ email và mật khẩu");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await login(email, password);
+      // Navigate back to app after successful login
+      router.back();
+    } catch (error: any) {
+      Alert.alert("Đăng nhập thất bại", error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
-    console.log("Google login");
-    // TODO: Implement Google sign-in
+    Alert.alert("Thông báo", "Tính năng đăng nhập Google sẽ sớm ra mắt");
   };
 
   const handleForgotPassword = () => {
-    console.log("Forgot password");
-    // TODO: Implement forgot password flow
+    Alert.alert("Thông báo", "Tính năng quên mật khẩu sẽ sớm ra mắt");
   };
 
   return (
@@ -56,43 +72,57 @@ export default function LoginScreen() {
             </Text>
           </View>
 
-          <AuthForm
-            isLogin={true}
-            email={email}
-            password={password}
-            name=""
-            onEmailChange={setEmail}
-            onPasswordChange={setPassword}
-            onNameChange={() => {}}
-            onSubmit={handleLogin}
-            onForgotPassword={handleForgotPassword}
-          />
-
-          <SocialLogin onGoogleLogin={handleGoogleLogin} />
-
-          <View className="flex-row items-center justify-center mt-6">
-            <Text className="text-sm text-slate-600">Chưa có tài khoản? </Text>
-            <Pressable onPress={() => router.push("/(auth)/register")}>
-              <Text className="text-sm font-semibold text-[#0a7ea4]">
-                Đăng ký ngay
-              </Text>
-            </Pressable>
-          </View>
-
-          <View className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
-            <View className="flex-row items-start">
-              <Ionicons name="information-circle" size={20} color="#0a7ea4" />
-              <View className="flex-1 ml-2">
-                <Text className="text-sm font-semibold text-slate-900 mb-1">
-                  Chế độ khách
-                </Text>
-                <Text className="text-sm text-slate-600 leading-5">
-                  Bạn có thể sử dụng app mà không cần đăng nhập, nhưng lịch sử
-                  phân tích sẽ không được lưu.
-                </Text>
-              </View>
+          {loading ? (
+            <View className="py-8">
+              <ActivityIndicator size="large" color="#0891b2" />
             </View>
-          </View>
+          ) : (
+            <>
+              <AuthForm
+                isLogin={true}
+                email={email}
+                password={password}
+                name=""
+                onEmailChange={setEmail}
+                onPasswordChange={setPassword}
+                onNameChange={() => {}}
+                onSubmit={handleLogin}
+                onForgotPassword={handleForgotPassword}
+              />
+
+              <SocialLogin onGoogleLogin={handleGoogleLogin} />
+
+              <View className="flex-row items-center justify-center mt-6">
+                <Text className="text-sm text-slate-600">
+                  Chưa có tài khoản?{" "}
+                </Text>
+                <Pressable onPress={() => router.push("/(auth)/register")}>
+                  <Text className="text-sm font-semibold text-[#0a7ea4]">
+                    Đăng ký ngay
+                  </Text>
+                </Pressable>
+              </View>
+
+              <View className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <View className="flex-row items-start">
+                  <Ionicons
+                    name="information-circle"
+                    size={20}
+                    color="#0a7ea4"
+                  />
+                  <View className="flex-1 ml-2">
+                    <Text className="text-sm font-semibold text-slate-900 mb-1">
+                      Chế độ khách
+                    </Text>
+                    <Text className="text-sm text-slate-600 leading-5">
+                      Bạn có thể sử dụng app mà không cần đăng nhập, nhưng lịch
+                      sử phân tích sẽ không được lưu.
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -11,10 +11,14 @@ import ImagePlaceholder from "../../components/analysis/ImagePlaceholder";
 import ActionButtons from "../../components/analysis/ActionButtons";
 import TipsCard from "../../components/analysis/TipsCard";
 import ScreenHeader from "../../components/common/ScreenHeader";
+import ResultCard from "../../components/analysis/result/ResultCard";
+
+type LoadingStage = "processing" | "analyzing" | "finalizing";
 
 export default function AnalysisScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [loadingStage, setLoadingStage] = useState<LoadingStage>("processing");
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(
     null
   );
@@ -67,10 +71,13 @@ export default function AnalysisScreen() {
       return;
     }
 
+    // Show result screen immediately with loading state
+    setAnalysisResult(null);
     setIsAnalyzing(true);
+    setLoadingStage("processing");
 
     try {
-      // ===== STEP 1: VALIDATE ẢNH =====
+      // ===== STEP 1: VALIDATE & CONVERT =====
       console.log("📋 [Step 1] Validating image...");
       const validation = await validateImage(selectedImage);
 
@@ -79,6 +86,7 @@ export default function AnalysisScreen() {
           "Ảnh không hợp lệ",
           validation.error || "Vui lòng chọn ảnh khác"
         );
+        setIsAnalyzing(false);
         return;
       }
       console.log("✅ [Step 1] Validation passed");
@@ -89,37 +97,36 @@ export default function AnalysisScreen() {
       console.log("✅ [Step 2] Converted! Length:", base64Image.length);
 
       // ===== STEP 3: CALL API =====
+      setLoadingStage("analyzing");
       console.log("🚀 [Step 3] Calling API...");
-      const result = await analyzeSkin(base64Image, true); // includeExpertInfo = true
+      const result = await analyzeSkin(base64Image, true);
       console.log("✅ [Step 3] Analysis complete!", {
         skinType: result.skinType,
         zones: result.zones.length,
         score: result.confidenceScore,
       });
 
-      // ===== STEP 4: LƯU KẾT QUẢ =====
-      setAnalysisResult(result);
+      // ===== STEP 4: FINALIZE =====
+      setLoadingStage("finalizing");
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // ===== STEP 5: HIỂN THỊ KẾT QUẢ =====
-      Alert.alert(
-        "🎉 Phân tích thành công!",
-        `Loại da: ${result.skinType || "Chưa xác định"}\n` +
-          `Điểm: ${result.confidenceScore}/100\n` +
-          `Số vùng: ${result.zones.length}\n` +
-          `Độ tin cậy: ${result.isUncertain ? "⚠️ Thấp" : "✅ Cao"}`,
-        [
-          { text: "Xem chi tiết", onPress: () => console.log(result) },
-          { text: "OK" },
-        ]
-      );
+      // ===== STEP 5: DISPLAY RESULT =====
+      setAnalysisResult(result);
+      console.log("[Step 5] Result displayed!");
     } catch (error: any) {
-      console.error("❌ [Error] Analysis failed:", error);
+      console.error("[Error] Analysis failed:", error);
 
       const errorMessage = handleApiError(error);
       Alert.alert("Lỗi phân tích", errorMessage);
+      setAnalysisResult(null);
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handleAnalyzeAgain = () => {
+    setAnalysisResult(null);
+    setSelectedImage(null);
   };
 
   return (
@@ -131,20 +138,34 @@ export default function AnalysisScreen() {
         contentContainerClassName="p-5"
         showsVerticalScrollIndicator={false}
       >
-        {selectedImage ? (
-          <ImagePreview
-            imageUri={selectedImage}
-            onRemove={() => setSelectedImage(null)}
-            onAnalyze={handleAnalyze}
+        {/* Show result screen when analyzing or has result */}
+        {isAnalyzing || analysisResult ? (
+          <ResultCard
+            result={analysisResult}
             isLoading={isAnalyzing}
+            onAnalyzeAgain={handleAnalyzeAgain}
           />
         ) : (
-          <ImagePlaceholder />
+          <>
+            {/* Image Selection */}
+            {selectedImage ? (
+              <ImagePreview
+                imageUri={selectedImage}
+                onRemove={() => setSelectedImage(null)}
+                onAnalyze={handleAnalyze}
+                isLoading={isAnalyzing}
+              />
+            ) : (
+              <ImagePlaceholder />
+            )}
+
+            {/* Action Buttons */}
+            <ActionButtons onTakePhoto={takePhoto} onPickImage={pickImage} />
+
+            {/* Tips Card */}
+            <TipsCard />
+          </>
         )}
-
-        <ActionButtons onTakePhoto={takePhoto} onPickImage={pickImage} />
-
-        <TipsCard />
       </ScrollView>
     </SafeAreaView>
   );

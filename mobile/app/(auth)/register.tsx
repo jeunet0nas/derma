@@ -6,27 +6,100 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Alert,
+  ActivityIndicator,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useAuth } from "@/contexts/AuthContext";
 import AuthForm from "../../components/auth/AuthForm";
 import SocialLogin from "../../components/auth/SocialLogin";
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { register } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
-    console.log("Register:", { name, email, password });
-    // TODO: Implement Firebase registration
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const getFirebaseErrorMessage = (error: any) => {
+    const errorCode = error?.code;
+    switch (errorCode) {
+      case "auth/email-already-in-use":
+        return "Email này đã được sử dụng";
+      case "auth/invalid-email":
+        return "Email không hợp lệ";
+      case "auth/weak-password":
+        return "Mật khẩu quá yếu";
+      case "auth/network-request-failed":
+        return "Lỗi kết nối mạng";
+      default:
+        return error?.message || "Đã xảy ra lỗi không xác định";
+    }
+  };
+
+  const handleRegister = async () => {
+    // Validate empty fields
+    if (!name.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập họ tên");
+      return;
+    }
+
+    if (!email.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập email");
+      return;
+    }
+
+    if (!password) {
+      Alert.alert("Lỗi", "Vui lòng nhập mật khẩu");
+      return;
+    }
+
+    // Validate email format
+    if (!validateEmail(email)) {
+      Alert.alert("Lỗi", "Email không hợp lệ");
+      return;
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      Alert.alert("Lỗi", "Mật khẩu phải có ít nhất 6 ký tự");
+      return;
+    }
+
+    // Validate password match
+    if (password !== confirmPassword) {
+      Alert.alert("Lỗi", "Mật khẩu xác nhận không khớp");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await register(email.trim(), password, name.trim());
+      Alert.alert("Đăng ký thành công", "Chào mừng bạn đến với DermaScan!", [
+        {
+          text: "OK",
+          onPress: () => router.replace("/(tabs)"),
+        },
+      ]);
+    } catch (error: any) {
+      Alert.alert("Đăng ký thất bại", getFirebaseErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
-    console.log("Google sign-up");
-    // TODO: Implement Google sign-in
+    Alert.alert("Thông báo", "Tính năng đăng ký Google sẽ sớm ra mắt");
   };
 
   return (
@@ -63,23 +136,60 @@ export default function RegisterScreen() {
             onSubmit={handleRegister}
           />
 
+          {/* Confirm Password Field */}
+          <View className="mb-4">
+            <Text className="text-sm font-medium text-slate-700 mb-2">
+              Xác nhận mật khẩu
+            </Text>
+            <View className="flex-row items-center bg-white border border-gray-200 rounded-xl px-4 py-3.5">
+              <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" />
+              <TextInput
+                className="flex-1 ml-3 text-base text-slate-900"
+                placeholder="Nhập lại mật khẩu"
+                placeholderTextColor="#94a3b8"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                editable={!loading}
+              />
+            </View>
+          </View>
+
+          {/* Custom Submit Button with Loading State */}
+          <Pressable
+            className={`rounded-xl py-4 mt-4 shadow-md ${
+              loading ? "bg-gray-400" : "bg-[#0a7ea4] active:opacity-90"
+            }`}
+            onPress={handleRegister}
+            disabled={loading}
+          >
+            {loading ? (
+              <View className="flex-row items-center justify-center">
+                <ActivityIndicator size="small" color="#ffffff" />
+                <Text className="text-white text-center font-bold text-base ml-2">
+                  Đang đăng ký...
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-white text-center font-bold text-base">
+                Đăng ký
+              </Text>
+            )}
+          </Pressable>
+
           <SocialLogin onGoogleLogin={handleGoogleLogin} />
 
           <View className="flex-row items-center justify-center mt-6">
             <Text className="text-sm text-slate-600">Đã có tài khoản? </Text>
-            <Pressable onPress={() => router.push("/(auth)/login")}>
+            <Pressable
+              onPress={() => router.push("/(auth)/login")}
+              disabled={loading}
+            >
               <Text className="text-sm font-semibold text-[#0a7ea4]">
                 Đăng nhập
               </Text>
             </Pressable>
           </View>
-
-          <Text className="text-xs text-slate-500 text-center mt-6 leading-5">
-            Bằng việc đăng ký, bạn đồng ý với{" "}
-            <Text className="text-[#0a7ea4]">Điều khoản dịch vụ</Text> và{" "}
-            <Text className="text-[#0a7ea4]">Chính sách bảo mật</Text> của chúng
-            tôi
-          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

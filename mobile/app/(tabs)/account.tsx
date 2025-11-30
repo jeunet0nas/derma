@@ -1,13 +1,15 @@
 import React from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View, Text, Pressable, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useAuth } from "@/contexts/AuthContext";
 import ScreenHeader from "../../components/common/ScreenHeader";
 
 export default function AccountScreen() {
   const router = useRouter();
-  const isLoggedIn = false; // TODO: Get from AuthContext
+  const { user, logout, loading } = useAuth();
+  const isLoggedIn = !!user;
 
   const menuItems = [
     {
@@ -151,13 +153,15 @@ export default function AccountScreen() {
         <View className="bg-white rounded-3xl p-6 mb-5 shadow-sm">
           <View className="flex-row items-center">
             <View className="w-20 h-20 rounded-full bg-[#0a7ea4] items-center justify-center">
-              <Text className="text-3xl font-bold text-white">N</Text>
+              <Text className="text-3xl font-bold text-white">
+                {user?.displayName?.charAt(0).toUpperCase() || "U"}
+              </Text>
             </View>
             <View className="flex-1 ml-4">
               <Text className="text-xl font-bold text-slate-900 mb-1.5">
-                Nguyễn Văn A
+                {user?.displayName || "Người dùng"}
               </Text>
-              <Text className="text-sm text-slate-500">user@example.com</Text>
+              <Text className="text-sm text-slate-500">{user?.email}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
           </View>
@@ -190,7 +194,25 @@ export default function AccountScreen() {
         </View>
 
         {/* Logout Button */}
-        <Pressable className="bg-red-50 border border-red-200 rounded-2xl py-4 active:bg-red-100">
+        <Pressable
+          className="bg-red-50 border border-red-200 rounded-2xl py-4 active:bg-red-100"
+          onPress={() => {
+            Alert.alert("Đăng xuất", "Bạn có chắc muốn đăng xuất?", [
+              { text: "Hủy", style: "cancel" },
+              {
+                text: "Đăng xuất",
+                style: "destructive",
+                onPress: async () => {
+                  try {
+                    await logout();
+                  } catch (error: any) {
+                    Alert.alert("Lỗi", error.message);
+                  }
+                },
+              },
+            ]);
+          }}
+        >
           <View className="flex-row items-center justify-center">
             <Ionicons name="log-out-outline" size={20} color="#ef4444" />
             <Text className="ml-2 text-red-600 font-semibold text-base">

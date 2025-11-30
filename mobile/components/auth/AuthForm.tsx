@@ -86,14 +86,16 @@ export default function AuthForm({
         </Pressable>
       )}
 
-      <Pressable
-        className="bg-[#0a7ea4] rounded-xl py-4 mt-4 shadow-md active:opacity-90"
-        onPress={onSubmit}
-      >
-        <Text className="text-white text-center font-bold text-base">
-          {isLogin ? "Đăng nhập" : "Đăng ký"}
-        </Text>
-      </Pressable>
+      {isLogin && (
+        <Pressable
+          className="bg-[#0a7ea4] rounded-xl py-4 mt-4 shadow-md active:opacity-90"
+          onPress={onSubmit}
+        >
+          <Text className="text-white text-center font-bold text-base">
+            Đăng nhập
+          </Text>
+        </Pressable>
+      )}
     </View>
   );
 }
