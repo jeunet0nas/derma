@@ -1,20 +1,17 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
-import { saveAnalysis } from "@/api/services/analysis.service";
+import { useSaveAnalysis } from "@/hooks/useSaveAnalysis";
 import type { AnalysisResult } from "@/types/api.types";
 import ScoreSection from "./ScoreSection";
 import ZonesAccordion from "./ZonesAccordion";
 import RecommendationsSection from "./RecommendationsSection";
 import ExpertInfoSection from "./ExpertInfoSection";
+import SaveButton from "./SaveButton";
+import UncertaintyWarning from "./UncertaintyWarning";
+import LoadingState from "../LoadingState";
 
 interface ResultCardProps {
   result: AnalysisResult | null;
@@ -35,45 +32,12 @@ export default function ResultCard({
 }: ResultCardProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const [isSaving, setIsSaving] = useState(false);
-  const [currentSavedId, setCurrentSavedId] = useState(savedAnalysisId);
+  const { isSaving, currentSavedId, handleSave } =
+    useSaveAnalysis(savedAnalysisId);
 
-  const handleSaveAnalysis = async () => {
-    if (!result) return;
-
-    setIsSaving(true);
-    try {
-      const response = await saveAnalysis(result, imageBase64);
-      setCurrentSavedId(response.id);
-      Alert.alert(
-        "Đã lưu!",
-        "Kết quả phân tích đã được lưu vào lịch sử của bạn",
-        [{ text: "OK" }]
-      );
-    } catch (error: any) {
-      Alert.alert(
-        "Lỗi",
-        error?.error?.message || "Không thể lưu kết quả. Vui lòng thử lại"
-      );
-    } finally {
-      setIsSaving(false);
-    }
-  };
   // Loading State
   if (isLoading || !result) {
-    return (
-      <View className="flex-1 items-center justify-center py-20">
-        <View className="bg-white p-8 items-center" style={{ width: "90%" }}>
-          <ActivityIndicator size="large" color="#0891b2" />
-          <Text className="text-lg font-semibold text-gray-900 mt-4">
-            Đang phân tích da...
-          </Text>
-          <Text className="text-sm text-gray-600 mt-2 text-center">
-            AI đang xử lý hình ảnh của bạn
-          </Text>
-        </View>
-      </View>
-    );
+    return <LoadingState />;
   }
 
   // Loaded State with Data
@@ -124,72 +88,21 @@ export default function ResultCard({
 
       {/* Uncertainty Warning */}
       {result.isUncertain && result.uncertaintyReason && (
-        <View className="bg-amber-50 p-4 mb-4 border-l-4 border-amber-400">
-          <View className="flex-row items-start">
-            <Ionicons name="information-circle" size={22} color="#f59e0b" />
-            <View className="flex-1 ml-3">
-              <Text className="text-sm font-semibold text-amber-900 mb-1">
-                Lưu ý về độ tin cậy
-              </Text>
-              <Text className="text-sm text-amber-800 leading-5">
-                {result.uncertaintyReason}
-              </Text>
-            </View>
-          </View>
-        </View>
+        <UncertaintyWarning reason={result.uncertaintyReason} />
       )}
 
       {/* Action Buttons */}
       <View className="px-4 pb-4 gap-3">
         {/* Save Analysis Button */}
-        {!readOnly && user ? (
-          <TouchableOpacity
-            onPress={handleSaveAnalysis}
-            disabled={isSaving || !!currentSavedId}
-            activeOpacity={0.8}
-            className={`rounded-xl py-3.5 ${
-              isSaving || currentSavedId ? "bg-gray-400" : "bg-emerald-600"
-            }`}
-          >
-            <View className="flex-row items-center justify-center">
-              {isSaving ? (
-                <>
-                  <ActivityIndicator size="small" color="white" />
-                  <Text className="text-white font-semibold text-base ml-2">
-                    Đang lưu...
-                  </Text>
-                </>
-              ) : currentSavedId ? (
-                <>
-                  <Ionicons name="checkmark-circle" size={20} color="white" />
-                  <Text className="text-white font-semibold text-base ml-2">
-                    Đã lưu
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Ionicons name="save" size={20} color="white" />
-                  <Text className="text-white font-semibold text-base ml-2">
-                    Lưu phân tích
-                  </Text>
-                </>
-              )}
-            </View>
-          </TouchableOpacity>
-        ) : !readOnly && !user ? (
-          <TouchableOpacity
-            onPress={() => router.push("/(auth)/login")}
-            activeOpacity={0.8}
-            className="bg-amber-500 rounded-xl py-3.5"
-          >
-            <View className="flex-row items-center justify-center">
-              <Ionicons name="lock-closed" size={20} color="white" />
-              <Text className="text-white font-semibold text-base ml-2">
-                Đăng nhập để lưu kết quả
-              </Text>
-            </View>
-          </TouchableOpacity>
-        ) : null}
+        {!readOnly && (
+          <SaveButton
+            user={user}
+            isSaving={isSaving}
+            isSaved={!!currentSavedId}
+            onSave={() => handleSave(result, imageBase64)}
+            onLogin={() => router.push("/(auth)/login")}
+          />
+        )}
 
         {/* Analyze Again Button */}
         {!readOnly && (
