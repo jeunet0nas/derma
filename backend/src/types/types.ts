@@ -1,19 +1,19 @@
 export type Tab =
-  | "dermascan"
-  | "dermaingredient"
-  | "dermacoach"
-  | "derma_knowledge"
-  | "dermaroutine"
-  | "aiskinlab";
+  | 'dermascan'
+  | 'dermaingredient'
+  | 'dermacoach'
+  | 'derma_knowledge'
+  | 'dermaroutine'
+  | 'aiskinlab';
 
 export interface ChatMessage {
-  role: "user" | "model";
+  role: 'user' | 'model';
   text: string;
   imageUrl?: string; // For user's uploaded image
   sources?: RagSource[]; // For model's citations
 }
 
-export type RiskLevel = "Low" | "Medium" | "High" | "Unknown";
+export type RiskLevel = 'Low' | 'Medium' | 'High' | 'Unknown';
 
 /**
  * Represents the analysis result for a specific skin zone.
@@ -42,12 +42,11 @@ export interface AnalysisResult {
   uncertaintyMessage: string; // Message to show to the user when uncertain
   confidenceScore: number; // NEW: AI's confidence in the overall analysis (0-100)
   expertInfo?: RagResult; // NEW: RAG result for the primary condition
-  advancedAnalysis?: AdvancedAnalysisResult;
 }
 
 export interface Feedback {
-  rating: "helpful" | "unhelpful";
-  reason?: "inaccurate" | "unclear" | "unsuitable" | "other";
+  rating: 'helpful' | 'unhelpful';
+  reason?: 'inaccurate' | 'unclear' | 'unsuitable' | 'other';
   details?: string;
   doctorDiagnosis?: string;
 }
@@ -62,10 +61,10 @@ export interface HistoryEntry {
 }
 
 export type SkinType =
-  | "dầu (oily)"
-  | "khô (dry)"
-  | "nhạy cảm (sensitive)"
-  | "hỗn hợp (combination)";
+  | 'dầu (oily)'
+  | 'khô (dry)'
+  | 'nhạy cảm (sensitive)'
+  | 'hỗn hợp (combination)';
 
 // FIX: Add missing CapturedFrame type for GuidedCaptureView component
 export interface CapturedFrame {
@@ -112,15 +111,15 @@ export interface PersonalizedRoutine {
 export interface LifestyleData {
   sleepHours: number;
   dietAndHydration: string;
-  stressLevel: "Thấp" | "Trung bình" | "Cao";
-  sunExposure: "Thấp" | "Trung bình" | "Cao";
+  stressLevel: 'Thấp' | 'Trung bình' | 'Cao';
+  sunExposure: 'Thấp' | 'Trung bình' | 'Cao';
 }
 
 // Types for Ingredient AI feature
 export interface UserProfileForIngredients {
-  skinType: "Khô" | "Dầu" | "Nhạy cảm" | "Hỗn hợp" | "Da mụn";
-  allergies: "Không" | "Hương liệu" | "Cồn" | "Paraben";
-  goals: "Dưỡng ẩm" | "Làm sáng" | "Chống lão hóa" | "Làm dịu" | "Trị mụn";
+  skinType: 'Khô' | 'Dầu' | 'Nhạy cảm' | 'Hỗn hợp' | 'Da mụn';
+  allergies: 'Không' | 'Hương liệu' | 'Cồn' | 'Paraben';
+  goals: 'Dưỡng ẩm' | 'Làm sáng' | 'Chống lão hóa' | 'Làm dịu' | 'Trị mụn';
 }
 
 export interface Ingredient {
@@ -141,7 +140,7 @@ export interface IngredientAnalysisResult {
   recommendations: string[];
   explanation: string;
   usageRecommendation: {
-    verdict: "Nên dùng" | "Thận trọng" | "Không nên dùng";
+    verdict: 'Nên dùng' | 'Thận trọng' | 'Không nên dùng';
     reason: string;
   };
   riskyIngredients: Array<{
@@ -187,7 +186,7 @@ export interface GeneticTrait {
 }
 
 export interface Forecast {
-  period: "1 năm tới" | "5 năm tới" | "10 năm tới";
+  period: '1 năm tới' | '5 năm tới' | '10 năm tới';
   prediction: string;
   imageUrl?: string;
 }
@@ -211,7 +210,7 @@ export interface PredictionInput {
 }
 
 export interface PredictionPeriod {
-  period: "7 ngày tới" | "14 ngày tới" | "30 ngày tới";
+  period: '7 ngày tới' | '14 ngày tới' | '30 ngày tới';
   predictedState: string; // Text description of the skin's future state
   potentialRisks: string[]; // List of potential risks like acne, dryness
   imageUrl?: string; // To be populated after generation
@@ -250,46 +249,6 @@ export interface RagSource {
 export interface RagResult {
   answer: string;
   sources: RagSource[];
-}
-// --- END NEW TYPES ---
-
-// --- NEW TYPES FOR AI SKIN LAB (Advanced Acne Analysis) ---
-export type AcneLabel =
-  | "blackhead"
-  | "whitehead"
-  | "papule"
-  | "pustule"
-  | "nodule_or_cyst"
-  | "inflammatory_area"
-  | "uncertain";
-
-export interface AcneDetection {
-  id: string;
-  center: { x: number; y: number };
-  radius: number;
-  label: AcneLabel;
-  confidence: number;
-  features: {
-    size_px: number;
-    color_center_hex: string;
-    raised: boolean;
-  };
-  advice: string;
-}
-
-export interface AdvancedAnalysisResult {
-  image_id: string;
-  detections: AcneDetection[];
-  svg_overlay: string;
-  summary_vi: string;
-  meta: {
-    method: string;
-    thresholds: {
-      heatmap_thresh: number;
-      min_area_px: number;
-    };
-    notes: string;
-  };
 }
 // --- END NEW TYPES ---
 

@@ -4,14 +4,13 @@
  */
 
 import { Router } from 'express';
-import { analyzeSkin, generateHeatmap, analyzeAdvanced } from '../controllers/analysis.controller';
-import { authenticate, optionalAuth } from '../middlewares/auth.middleware';
+import { analyzeSkin, generateHeatmap } from '../controllers/analysis.controller';
+import { optionalAuth } from '../middlewares/auth.middleware';
 import { validateBody } from '../middlewares/validation.middleware';
 import { aiAnalysisRateLimit } from '../middlewares/rateLimit.middleware';
 import {
   AnalyzeSkinRequestSchema,
   GenerateHeatmapRequestSchema,
-  AdvancedAnalysisRequestSchema,
 } from '../schemas/analysis.schemas';
 
 const router = Router();
@@ -87,45 +86,6 @@ router.post(
   aiAnalysisRateLimit,
   validateBody(GenerateHeatmapRequestSchema),
   generateHeatmap
-);
-
-/**
- * POST /api/analysis/advanced
- * Perform advanced analysis with acne detection
- *
- * Middlewares:
- * - authenticate: Require authentication (premium feature)
- * - aiAnalysisRateLimit: 10 requests/minute
- * - validateBody: Validate request with AdvancedAnalysisRequestSchema
- *
- * Request:
- * {
- *   "imageBase64": "base64_string",
- *   "imageMimeType": "image/jpeg",
- *   "heatmapBase64": "base64_string",
- *   "heatmapMimeType": "image/png"
- * }
- *
- * Response:
- * {
- *   "success": true,
- *   "data": {
- *     "analysisId": "req_ghi789",
- *     "result": {
- *       "image_id": "...",
- *       "detections": [...],
- *       "svg_overlay": "<svg>...</svg>",
- *       "summary_vi": "..."
- *     }
- *   }
- * }
- */
-router.post(
-  '/advanced',
-  authenticate, // Require auth for advanced analysis
-  aiAnalysisRateLimit,
-  validateBody(AdvancedAnalysisRequestSchema),
-  analyzeAdvanced
 );
 
 export default router;

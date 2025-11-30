@@ -35,87 +35,6 @@ export const ZoneAnalysisSchema = z.object({
 });
 
 // ============================================================================
-// ADVANCED ANALYSIS (AI SKIN LAB)
-// ============================================================================
-
-export type AcneLabel =
-  | 'blackhead'
-  | 'whitehead'
-  | 'papule'
-  | 'pustule'
-  | 'nodule_or_cyst'
-  | 'inflammatory_area'
-  | 'uncertain';
-
-export interface AcneDetection {
-  id: string;
-  center: { x: number; y: number };
-  radius: number;
-  label: AcneLabel;
-  confidence: number;
-  features: {
-    size_px: number;
-    color_center_hex: string;
-    raised: boolean;
-  };
-  advice: string;
-}
-
-export interface AdvancedAnalysisResult {
-  image_id: string;
-  detections: AcneDetection[];
-  svg_overlay: string;
-  summary_vi: string;
-  meta: {
-    method: string;
-    thresholds: {
-      heatmap_thresh: number;
-      min_area_px: number;
-    };
-    notes: string;
-  };
-}
-
-export const AcneLabelSchema = z.enum([
-  'blackhead',
-  'whitehead',
-  'papule',
-  'pustule',
-  'nodule_or_cyst',
-  'inflammatory_area',
-  'uncertain',
-]);
-
-export const AcneDetectionSchema = z.object({
-  id: z.string(),
-  center: z.object({ x: z.number(), y: z.number() }),
-  radius: z.number(),
-  label: AcneLabelSchema,
-  confidence: z.number().min(0).max(1),
-  features: z.object({
-    size_px: z.number(),
-    color_center_hex: z.string(),
-    raised: z.boolean(),
-  }),
-  advice: z.string(),
-});
-
-export const AdvancedAnalysisResultSchema = z.object({
-  image_id: z.string(),
-  detections: z.array(AcneDetectionSchema),
-  svg_overlay: z.string(),
-  summary_vi: z.string(),
-  meta: z.object({
-    method: z.string(),
-    thresholds: z.object({
-      heatmap_thresh: z.number(),
-      min_area_px: z.number(),
-    }),
-    notes: z.string(),
-  }),
-});
-
-// ============================================================================
 // ANALYSIS RESULT
 // ============================================================================
 
@@ -130,7 +49,6 @@ export interface AnalysisResult {
   confidenceScore: number;
   heatmapImageUrl?: string;
   expertInfo?: RagResult;
-  advancedAnalysis?: AdvancedAnalysisResult;
 }
 
 const RagResultSchemaLocal = z.object({
@@ -154,7 +72,6 @@ export const AnalysisResultSchema = z.object({
   confidenceScore: z.number().min(0).max(100),
   heatmapImageUrl: z.string().optional(),
   expertInfo: RagResultSchemaLocal.optional(),
-  advancedAnalysis: AdvancedAnalysisResultSchema.optional(),
 });
 
 // ============================================================================

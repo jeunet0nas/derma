@@ -11,17 +11,9 @@ import { ErrorMessages } from '../constants/errorMessages';
 import { logger } from '../config/logger.config';
 import { RequestWithId } from '../utils/requestLogger';
 import { AuthRequest } from '../middlewares/auth.middleware';
-import {
-  analyzeSkinImage,
-  generateHeatmapOverlay,
-  performAdvancedAnalysis,
-} from '../services/gemini/analysis.service';
+import { analyzeSkinImage, generateHeatmapOverlay } from '../services/gemini/analysis.service';
 import { getExpertInfoForCondition } from '../services/gemini/rag.service';
-import type {
-  AnalyzeSkinRequest,
-  GenerateHeatmapRequest,
-  AdvancedAnalysisRequest,
-} from '../schemas/analysis.schemas';
+import type { AnalyzeSkinRequest, GenerateHeatmapRequest } from '../schemas/analysis.schemas';
 
 /**
  * Helper to extract base64 and mimeType from data URL or raw base64
@@ -210,79 +202,6 @@ export const generateHeatmap = asyncHandler(async (req: Request, res: Response) 
     );
   } catch (error) {
     logger.error('Heatmap generation failed', {
-      requestId,
-      userId,
-      error: (error as Error).message,
-      stack: (error as Error).stack,
-    });
-
-    throw new GeminiError(ErrorMessages.GEMINI_API_ERROR, {
-      details: (error as Error).message,
-    });
-  }
-});
-
-/**
- * POST /api/analysis/advanced
- * Perform advanced analysis with acne detection
- *
- * Flow:
- * 1. Validate image and heatmap inputs
- * 2. Call performAdvancedAnalysis service
- * 3. Return detection results with SVG overlay
- */
-export const analyzeAdvanced = asyncHandler(async (req: Request, res: Response) => {
-  const startTime = Date.now();
-  const requestId = (req as RequestWithId).id;
-  const userId = (req as AuthRequest).user?.uid;
-  const body = req.body as AdvancedAnalysisRequest;
-
-  logger.info('Starting advanced analysis', {
-    requestId,
-    userId,
-  });
-
-  try {
-    // Parse images (remove data URL prefix if present)
-    const imageBase64 = body.imageBase64.includes('base64,')
-      ? body.imageBase64.split('base64,')[1]
-      : body.imageBase64;
-
-    const heatmapBase64 = body.heatmapBase64.includes('base64,')
-      ? body.heatmapBase64.split('base64,')[1]
-      : body.heatmapBase64;
-
-    // Perform advanced analysis
-    const advancedResult = await performAdvancedAnalysis(
-      imageBase64,
-      body.imageMimeType,
-      heatmapBase64,
-      body.heatmapMimeType
-    );
-
-    const processingTime = Date.now() - startTime;
-
-    logger.info('Advanced analysis completed', {
-      requestId,
-      userId,
-      detectionsCount: advancedResult.detections.length,
-      processingTime: `${processingTime}ms`,
-    });
-
-    return successResponse(
-      res,
-      {
-        analysisId: requestId,
-        result: advancedResult,
-      },
-      200,
-      {
-        requestId,
-        processingTime,
-      }
-    );
-  } catch (error) {
-    logger.error('Advanced analysis failed', {
       requestId,
       userId,
       error: (error as Error).message,

@@ -13,7 +13,6 @@ import { CommonSchemas } from '../middlewares/validation.middleware';
 export const AnalyzeSkinRequestSchema = z.object({
   image: CommonSchemas.base64Image,
   includeExpertInfo: z.boolean().optional().default(false),
-  includeAdvancedAnalysis: z.boolean().optional().default(false),
 });
 
 export type AnalyzeSkinRequest = z.infer<typeof AnalyzeSkinRequestSchema>;
@@ -38,16 +37,3 @@ export const GenerateHeatmapRequestSchema = z.object({
 });
 
 export type GenerateHeatmapRequest = z.infer<typeof GenerateHeatmapRequestSchema>;
-
-/**
- * Schema for advanced analysis request
- * POST /api/analysis/advanced
- */
-export const AdvancedAnalysisRequestSchema = z.object({
-  imageBase64: CommonSchemas.base64Image,
-  imageMimeType: z.string().regex(/^image\/(jpeg|jpg|png|webp)$/, 'MIME type không hợp lệ'),
-  heatmapBase64: CommonSchemas.base64Image,
-  heatmapMimeType: z.string().regex(/^image\/(jpeg|jpg|png|webp)$/, 'MIME type không hợp lệ'),
-});
-
-export type AdvancedAnalysisRequest = z.infer<typeof AdvancedAnalysisRequestSchema>;
